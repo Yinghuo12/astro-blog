@@ -3,8 +3,8 @@ title: LearnOpenGL环境配置
 published: 2024-08-16
 description: "记录学习LearnOpenGL的一些经历与踩的坑"
 image: ""
-tags: ["LearnOpenGL"]
-category: LearnOpenGL
+tags: ["OpenGL"]
+category: 计算机图形学
 draft: false
 ---
 
