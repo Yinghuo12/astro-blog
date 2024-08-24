@@ -8,7 +8,7 @@
 
 我的爱好: 编程, 钢琴, 计算机图形学, 游戏
 
-我的技术栈: C++, Python, Git, Linux, 网络编程, OpenGL
+我的技术栈: C++, Python, Git, CMake, Linux, 网络编程, OpenGL
 
 这是我的个人网站[astro-blog](https://github.com/Yinghuo12/astro-blog).
 
