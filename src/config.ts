@@ -54,8 +54,7 @@ export const profileConfig: ProfileConfig = {
     {
       name: 'QQ',
       icon: 'fa6-brands:qq',
-      // url: 'http://wpa.qq.com/msgrd?v=3&uin=654829830&site=qq&menu=yes',
-      url: 'https://tool.gljlw.com/qqq/?qq=654829830',
+      url: 'tencent://AddContact/?fromId=45&fromSubId=1&subcmd=all&uin=654829830&website=www.oicqzone.com',
       
     },
     {
