@@ -9,11 +9,12 @@ draft: false
 ---
 
 <style>
-    
-img{
+
+/* img{
     width: 80%;
-    padding-left: 10%;     /*  padding-left = (100% - width) / 2  */
-}
+    padding-left: 10%;     /* padding-left = (100% - width) / 2  
+} */
+
 </style>
 
 ### 2024.11.29
