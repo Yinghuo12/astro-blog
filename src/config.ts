@@ -55,7 +55,11 @@ export const profileConfig: ProfileConfig = {
       name: 'QQ',
       icon: 'fa6-brands:qq',
       url: 'tencent://AddContact/?fromId=45&fromSubId=1&subcmd=all&uin=654829830&website=www.oicqzone.com',
-      
+    },
+    {
+      name: 'LeetCode',
+      icon: 'fa6-brands:chrome',
+      url: 'https://leetcode.cn/u/yu-guangchao/',
     },
     {
       name: 'Bilibili',
