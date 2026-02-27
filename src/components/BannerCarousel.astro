@@ -1,0 +1,310 @@
+---
+import ImageWrapper from './misc/ImageWrapper.astro'
+import { siteConfig } from '../config'
+import { url, pathsEqual } from '../utils/url-utils'
+
+interface Props {
+  lightImages: string[]
+  darkImages: string[]
+}
+
+const { lightImages, darkImages } = Astro.props
+
+// 检查是否是主页
+const isHomePage = Astro.url.pathname === '/'
+
+// 检查是否有多张图片
+const hasMultiple = lightImages.length > 1 || darkImages.length > 1
+const carouselConfig = siteConfig.banner.carousel
+const textConfig = siteConfig.banner.text
+const position = siteConfig.banner.position || 'center'
+
+// 如果只有一张图片或禁用了轮播，使用静态显示
+const isStatic = !hasMultiple || !carouselConfig?.enable
+const interval = (carouselConfig?.interval || 5) * 1000
+const animation = carouselConfig?.animation || 'fade'
+
+// 合并图片数量（取最大值）
+const maxImages = Math.max(lightImages.length, darkImages.length)
+---
+
+<div id="banner-carousel" class="relative w-full h-full overflow-hidden" data-interval={interval} data-animation={animation} data-static={isStatic}>
+  <!-- 轮播图片容器 -->
+  <div id="banner-slides" class="relative w-full h-full">
+    {Array.from({ length: maxImages }).map((_, index) => (
+      <div
+        class:list={["banner-slide absolute inset-0 w-full h-full transition-all duration-1000", { "opacity-0": index !== 0 }]}
+        data-index={index}
+      >
+        <!-- Light mode image (如果没有对应的暗色图，则在暗色模式也显示) -->
+        {lightImages[index] && (
+          <ImageWrapper
+            alt={`Banner image ${index + 1} (light mode)`}
+            class:list={["object-cover h-full w-full", { "dark:hidden": !!darkImages[index] }]}
+            src={lightImages[index]}
+            position={position}
+            loading="eager"
+          />
+        )}
+        <!-- Dark mode image -->
+        {darkImages[index] && (
+          <ImageWrapper
+            alt={`Banner image ${index + 1} (dark mode)`}
+            class="object-cover h-full w-full hidden dark:block"
+            src={darkImages[index]}
+            position={position}
+            loading="eager"
+          />
+        )}
+      </div>
+    ))}
+  </div>
+
+  <!-- 站点文字和留言 (只在主页显示) -->
+  <div id="banner-text" class="absolute inset-0 flex flex-col items-center justify-center text-white/90 dark:text-white/90 z-10 pointer-events-none" style="display: none;">
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-center px-4 drop-shadow-lg" style="animation: fade-in-up 1s ease-out forwards;">
+      {textConfig?.title || siteConfig.title}
+    </h1>
+    {(textConfig?.message || siteConfig.subtitle) && (
+      <p class="text-lg md:text-xl lg:text-2xl text-center px-4 max-w-3xl drop-shadow-md" style="animation: fade-in-up 1s ease-out 0.3s forwards; opacity: 0;">
+        {textConfig?.message || siteConfig.subtitle}
+      </p>
+    )}
+  </div>
+
+  <!-- 轮播指示器 (由 JavaScript 控制主页隐藏) -->
+  {hasMultiple && carouselConfig?.enable && (
+    <div id="banner-indicators" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+      {Array.from({ length: maxImages }).map((_, index) => (
+        <button
+          class="banner-indicator w-3 h-3 rounded-full bg-white/50 hover:bg-white/80 transition-all duration-300"
+          data-index={index}
+          aria-label={`Go to slide ${index + 1}`}
+        />
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  /* 文字淡入动画 */
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 1s ease-out forwards;
+  }
+
+  .animate-fade-in-up-delayed {
+    animation: fade-in-up 1s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  /* 轮播指示器激活状态 */
+  .banner-indicator.active {
+    background: white;
+    width: 2rem;
+  }
+
+  /* 不同动画效果 */
+  .banner-slide {
+    will-change: opacity, transform;
+  }
+
+  /* Fade 动画 */
+  [data-animation="fade"] .banner-slide {
+    transition: opacity 1s ease-in-out;
+  }
+
+  [data-animation="fade"] .banner-slide.opacity-0 {
+    opacity: 0;
+  }
+
+  /* Slide 动画 */
+  [data-animation="slide"] .banner-slide {
+    transition: transform 1s ease-in-out, opacity 0.5s ease-in-out;
+  }
+
+  [data-animation="slide"] .banner-slide.opacity-0 {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  /* Zoom 动画 */
+  [data-animation="zoom"] .banner-slide {
+    transition: transform 1s ease-in-out, opacity 0.5s ease-in-out;
+  }
+
+  [data-animation="zoom"] .banner-slide.opacity-0 {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+</style>
+
+<script>
+interface BannerSlide {
+  element: HTMLElement;
+  index: number;
+}
+
+let currentIndex = 0;
+let slides: BannerSlide[] = [];
+let indicators: HTMLElement[] = [];
+let interval: number;
+let animation: string;
+let isStatic: boolean;
+let timer: number | null = null;
+
+// 检查是否是主页
+function isHomePage(): boolean {
+  return window.location.pathname === '/' || window.location.pathname === '/index';
+}
+
+// 更新文字显示状态
+function updateCarouselBannerText() {
+  const bannerText = document.getElementById('banner-text');
+  if (bannerText) {
+    if (isHomePage()) {
+      bannerText.style.display = 'flex';
+    } else {
+      bannerText.style.display = 'none';
+    }
+  }
+}
+
+// 更新指示器显示状态（主页隐藏）
+function updateCarouselIndicators() {
+  const indicatorsContainer = document.getElementById('banner-indicators');
+  if (indicatorsContainer) {
+    if (isHomePage()) {
+      indicatorsContainer.style.display = 'none';
+    } else {
+      indicatorsContainer.style.display = 'flex';
+    }
+  }
+}
+
+function initCarousel() {
+  const carousel = document.getElementById('banner-carousel');
+  if (!carousel) return;
+
+  interval = parseInt(carousel.dataset.interval || '5000');
+  animation = carousel.dataset.animation || 'fade';
+  isStatic = carousel.dataset.static === 'true';
+
+  const slidesElements = carousel.querySelectorAll('.banner-slide');
+  const indicatorElements = carousel.querySelectorAll('.banner-indicator');
+
+  slides = Array.from(slidesElements).map((el, index) => ({
+    element: el as HTMLElement,
+    index
+  }));
+
+  indicators = Array.from(indicatorElements) as HTMLElement[];
+
+  // 如果只有一张图片，不需要轮播
+  if (slides.length <= 1) {
+    updateCarouselBannerText();
+    updateCarouselIndicators();
+    return;
+  }
+
+  // 初始化指示器
+  updateIndicators();
+
+  // 为指示器添加点击事件
+  indicators.forEach((indicator, index) => {
+    indicator.addEventListener('click', () => {
+      goToSlide(index);
+    });
+  });
+
+  // 更新文字和指示器显示
+  updateCarouselBannerText();
+  updateCarouselIndicators();
+
+  // 只有主页才自动轮播
+  if (isHomePage()) {
+    startTimer();
+  }
+}
+
+function goToSlide(index: number) {
+  if (index === currentIndex) return;
+
+  // 移除当前活动的类
+  slides[currentIndex].element.classList.add('opacity-0');
+  if (animation === 'slide') {
+    (slides[currentIndex].element as HTMLElement).style.transform = 'translateX(-100%)';
+  } else if (animation === 'zoom') {
+    (slides[currentIndex].element as HTMLElement).style.transform = 'scale(1.1)';
+  }
+
+  // 添加新活动幻灯片的类
+  slides[index].element.classList.remove('opacity-0');
+  if (animation === 'slide') {
+    (slides[index].element as HTMLElement).style.transform = 'translateX(0)';
+  } else if (animation === 'zoom') {
+    (slides[index].element as HTMLElement).style.transform = 'scale(1)';
+  }
+
+  currentIndex = index;
+  updateIndicators();
+
+  // 重置定时器
+  resetTimer();
+}
+
+function nextSlide() {
+  const nextIndex = (currentIndex + 1) % slides.length;
+  goToSlide(nextIndex);
+}
+
+function updateIndicators() {
+  indicators.forEach((indicator, index) => {
+    if (index === currentIndex) {
+      indicator.classList.add('active');
+    } else {
+      indicator.classList.remove('active');
+    }
+  });
+}
+
+function startTimer() {
+  if (timer) clearInterval(timer);
+  timer = window.setInterval(nextSlide, interval);
+}
+
+function resetTimer() {
+  if (timer) clearInterval(timer);
+  startTimer();
+}
+
+// 页面加载时初始化
+initCarousel();
+
+// 监听页面导航变化（Swup）
+document.addEventListener('astro:after-swap', () => {
+  if (timer) clearInterval(timer);
+  initCarousel();
+  updateCarouselBannerText();
+  updateCarouselIndicators();
+}, { once: false });
+
+// 页面可见性变化时暂停/恢复轮播
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (timer) clearInterval(timer);
+  } else {
+    startTimer();
+  }
+});
+</script>

@@ -1,0 +1,98 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+import { getCollection } from 'astro:content'
+import { url } from '../utils/url-utils'
+
+const allDiaries = await getCollection('diary')
+// 先按置顶状态排序，再按日期排序（置顶的在前面）
+const sortedDiaries = allDiaries.sort((a, b) => {
+  // 如果置顶状态不同，置顶的排在前面
+  if (a.data.pinned !== b.data.pinned) {
+    return (b.data.pinned || false) ? 1 : -1
+  }
+  // 置顶状态相同，按日期降序排序
+  return b.data.published.valueOf() - a.data.published.valueOf()
+})
+---
+<MainGridLayout title="我的日记" description="记录生活的美好瞬间">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-8 relative w-full">
+            <!-- 页面头部 -->
+            <div class="flex items-center justify-between mb-8 pb-6 border-b border-[var(--border-color)]">
+                <div>
+                    <h1 class="text-3xl font-bold text-[var(--primary)] mb-2">📔 我的日记</h1>
+                    <p class="text-black/60 dark:text-white/60">记录生活的美好瞬间</p>
+                </div>
+                <div class="text-sm text-black/50 dark:text-white/50">
+                    共 {sortedDiaries.length} 篇日记
+                </div>
+            </div>
+
+            <!-- 日记列表 - 参考主页的样式 -->
+            <div class="flex flex-col gap-4 md:gap-6">
+                {sortedDiaries.map((diary) => (
+                    <a href={url(`/diary/${diary.slug}/`)} class="diary-card group relative block w-full rounded-[var(--radius-large)] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl bg-[var(--card-bg)] border border-[var(--line-divider)]" data-private={diary.data.private ? 'true' : 'false'} data-pinned={diary.data.pinned ? 'true' : 'false'}>
+                        <div class="flex items-start gap-4 p-6 md:p-8">
+                            <!-- 心情图标 -->
+                            <div class="flex-shrink-0 text-4xl md:text-5xl">
+                                {diary.data.mood || '📝'}
+                            </div>
+
+                            <!-- 内容区域 -->
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-xl md:text-2xl mb-2 flex items-center gap-2 text-90 hover:text-[var(--primary)] dark:text-white/90 dark:hover:text-[var(--primary)] transition">
+                                    {diary.data.pinned && <span class="text-xl" title="置顶日记">📌</span>}
+                                    {diary.data.title}
+                                    {diary.data.private && (
+                                        <span class="text-xl" title="私密日记">🔒</span>
+                                    )}
+                                </h3>
+
+                                <div class="flex items-center gap-2 text-sm text-black/50 dark:text-white/50 mb-3">
+                                    <span>📅 {diary.data.published.toLocaleDateString('zh-CN')}</span>
+                                </div>
+
+                                {diary.data.description && (
+                                    <p class="text-black/70 dark:text-white/70 text-sm leading-relaxed line-clamp-2">
+                                        {diary.data.description}
+                                    </p>
+                                )}
+
+                                {diary.data.tags && diary.data.tags.length > 0 && (
+                                    <div class="flex items-center gap-2 mt-3 flex-wrap">
+                                        {diary.data.tags.map(tag => (
+                                            <span class="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <!-- 箭头图标 (hover时显示) -->
+                            <div class="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+                ))}
+            </div>
+
+            {sortedDiaries.length === 0 && (
+                <div class="text-center py-12 text-black/50 dark:text-white/50">
+                    <div class="text-4xl mb-4">📝</div>
+                    <p>还没有日记，快来写第一篇吧！</p>
+                </div>
+            )}
+        </div>
+    </div>
+</MainGridLayout>
+
+<style>
+    /* 置顶日记的边框高亮 */
+    .diary-card[data-pinned="true"] {
+        border-color: rgb(var(--primary) / 0.3) !important;
+    }
+</style>

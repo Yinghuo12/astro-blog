@@ -1,0 +1,130 @@
+---
+import { type NavBarLink } from '../../types/config'
+import { Icon } from 'astro-icon/components'
+import { url } from '../../utils/url-utils'
+
+interface Props {
+  links: NavBarLink[]
+}
+
+const links = Astro.props.links
+---
+<div id="nav-menu-panel" class="float-panel float-panel-closed absolute transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto">
+    {links.map((link) => {
+      const hasChildren = link.children && link.children.length > 0
+
+      return (
+        <div class="nav-item">
+          {hasChildren ? (
+            <>
+              <div class="group flex justify-between items-center py-2 cursor-pointer rounded-lg gap-8
+                hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition pl-3 pr-1"
+                data-submenu-toggle
+              >
+                <div class="transition text-black/75 dark:text-white/75 font-bold group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                  {link.name}
+                </div>
+                <Icon name="material-symbols:keyboard-arrow-down-rounded"
+                      class="transition text-[1.25rem] text-[var(--primary)] submenu-arrow"
+                >
+                </Icon>
+              </div>
+              <div class="submenu hidden">
+                {link.children!.map((child) => (
+                  <a href={child.external ? child.url : url(child.url!)}
+                     class="group flex justify-between items-center py-2 rounded-lg gap-8
+                     hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition pl-6 pr-1"
+                     target={child.external ? "_blank" : null}
+                  >
+                    <div class="transition text-black/75 dark:text-white/75 font-bold group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                      {child.name}
+                    </div>
+                    {!child.external && <Icon name="material-symbols:chevron-right-rounded"
+                          class="transition text-[1.25rem] text-[var(--primary)]"
+                    >
+                    </Icon>}
+                    {child.external && <Icon name="fa6-solid:arrow-up-right-from-square"
+                          class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
+                    >
+                    </Icon>}
+                  </a>
+                ))}
+              </div>
+            </>
+          ) : (
+            <a href={link.external ? link.url : url(link.url!)}
+               class="group flex justify-between items-center py-2 rounded-lg gap-8
+               hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition pl-3 pr-1"
+               target={link.external ? "_blank" : null}
+            >
+              <div class="transition text-black/75 dark:text-white/75 font-bold group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                {link.name}
+              </div>
+              {!link.external && <Icon name="material-symbols:chevron-right-rounded"
+                    class="transition text-[1.25rem] text-[var(--primary)]"
+              >
+              </Icon>}
+              {link.external && <Icon name="fa6-solid:arrow-up-right-from-square"
+                    class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
+              >
+              </Icon>}
+            </a>
+          )}
+        </div>
+      )
+    })}
+</div>
+
+<style>
+.submenu {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.submenu:not(.hidden) {
+  max-height: 500px;
+}
+
+.submenu.hidden {
+  max-height: 0;
+}
+
+.submenu-arrow {
+  transition: transform 0.3s ease;
+}
+
+[data-submenu-toggle][aria-expanded="true"] .submenu-arrow {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submenu,
+  .submenu-arrow {
+    transition: none;
+  }
+}
+</style>
+
+<script>
+function loadSubmenuScripts() {
+  const toggles = document.querySelectorAll('[data-submenu-toggle]')
+
+  toggles.forEach(toggle => {
+    toggle.addEventListener('click', function() {
+      const submenu = this.nextElementSibling
+      const isExpanded = this.getAttribute('aria-expanded') === 'true'
+
+      if (isExpanded) {
+        this.setAttribute('aria-expanded', 'false')
+        submenu.classList.add('hidden')
+      } else {
+        this.setAttribute('aria-expanded', 'true')
+        submenu.classList.remove('hidden')
+      }
+    })
+  })
+}
+
+document.addEventListener('DOMContentLoaded', loadSubmenuScripts)
+document.addEventListener('astro:after-swap', loadSubmenuScripts)
+</script>

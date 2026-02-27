@@ -1,0 +1,17 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+import { getEntry } from 'astro:content'
+import Markdown from '@components/misc/Markdown.astro'
+
+const changelogPost = await getEntry('spec', 'changelog')
+const { Content } = await changelogPost.render()
+---
+<MainGridLayout title="关于小站" description="小站开发日志">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-8 relative w-full">
+            <Markdown>
+                <Content />
+            </Markdown>
+        </div>
+    </div>
+</MainGridLayout>

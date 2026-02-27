@@ -1,0 +1,50 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+---
+
+<MainGridLayout title="朋友" description="我的朋友们">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-6 relative w-full">
+            <h1 class="text-2xl font-bold mb-2 text-[var(--primary)]">👫 我的朋友们</h1>
+            <p class="text-black/60 dark:text-white/60 mb-8">
+                这里是一些优秀的博客和朋友们的主页
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 朋友卡片示例 -->
+                <a href="https://example.com" target="_blank" class="card-base p-4 flex items-center gap-4 hover:scale-[1.02] transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--primary)]/30 to-[var(--primary)]/10 flex items-center justify-center flex-shrink-0">
+                        <span class="text-2xl">👤</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-lg truncate">朋友的名字</h3>
+                        <p class="text-sm text-black/60 dark:text-white/60 truncate">朋友的简介或一句话描述</p>
+                    </div>
+                    <div class="text-[var(--primary)]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                    </div>
+                </a>
+
+                <!-- 更多朋友卡片 -->
+                <a href="#" class="card-base p-4 flex items-center gap-4 hover:scale-[1.02] transition-transform opacity-50">
+                    <div class="w-16 h-16 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+                        <span class="text-2xl">👤</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-lg truncate">待添加</h3>
+                        <p class="text-sm text-black/60 dark:text-white/60 truncate">更多朋友即将到来</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="mt-8 p-4 rounded-lg bg-[var(--primary)]/5 border border-[var(--primary)]/20">
+                <h3 class="font-bold text-[var(--primary)] mb-2">✨ 申请友链</h3>
+                <p class="text-sm text-black/70 dark:text-white/70">
+                    如果你也想交换友链，欢迎通过邮件或社交媒体联系我！
+                </p>
+            </div>
+        </div>
+    </div>
+</MainGridLayout>

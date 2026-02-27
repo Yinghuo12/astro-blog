@@ -1,0 +1,169 @@
+---
+import MainGridLayout from '../../layouts/MainGridLayout.astro'
+import { getCollection } from 'astro:content'
+import Markdown from '@components/misc/Markdown.astro'
+import TableOfContents from '@components/TableOfContents.svelte'
+
+export async function getStaticPaths() {
+  const diaries = await getCollection('diary')
+  return diaries.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }))
+}
+
+const { entry } = Astro.props
+const { Content } = await entry.render()
+
+// 检查是否为私密日记
+const isPrivate = entry.data.private || false
+const password = entry.data.password || ''
+const currentSlug = entry.slug
+---
+
+<!-- 引入日记密码验证脚本 (仅私密日记) -->
+{isPrivate && <script src="/scripts/diary-password.js" is:inline></script>}
+
+
+<MainGridLayout title={entry.data.title} description={entry.data.description}>
+    <!-- 存储密码数据 -->
+    {isPrivate && <span id="diary-config" data-password={password} data-slug={currentSlug} class="hidden"></span>}
+
+    <div class="flex flex-col lg:flex-row gap-6 w-full">
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+            <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32 mb-4">
+                <div class="card-base z-10 px-9 py-8 relative w-full">
+                    <!-- 日记头部 -->
+                    <div class="mb-8 pb-6 border-b border-[var(--border-color)]">
+                        <div class="flex items-center gap-2 text-sm text-black/50 dark:text-white/70 mb-3">
+                            <span>📅 {entry.data.published.toLocaleDateString('zh-CN')}</span>
+                            {entry.data.mood && <span>·</span>}
+                            {entry.data.mood && <span>{entry.data.mood}</span>}
+                            {isPrivate && <span>·</span>}
+                            {isPrivate && <span class="text-[var(--primary)] dark:text-[var(--primary)] font-medium">🔒 私密日记</span>}
+                        </div>
+                        <h1 class="text-3xl font-bold text-[var(--primary)] mb-3 flex items-center gap-2">
+                            {entry.data.title}
+                            {isPrivate && <span class="text-2xl">🔒</span>}
+                        </h1>
+                        {entry.data.tags && entry.data.tags.length > 0 && (
+                            <div class="flex items-center gap-2">
+                                {entry.data.tags.map(tag => (
+                                    <span class="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs">
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {isPrivate ? (
+                        // <!-- 私密日记：显示密码输入界面 -->
+                        <>
+                            <div id="diary-lock" class="flex flex-col items-center justify-center min-h-[40vh]">
+                                <div class="text-6xl mb-6 animate-bounce">🔐</div>
+                                <h2 class="text-2xl font-bold text-[var(--primary)] mb-3">这是一篇私密日记</h2>
+                                <p class="text-black/70 dark:text-white/70 mb-8 text-center max-w-md">
+                                    这篇日记需要密码才能查看<br/>请输入密码继续阅读
+                                </p>
+                                <div class="w-full max-w-md flex flex-col items-center">
+                                    <div class="flex gap-3 w-full">
+                                        <input
+                                            type="password"
+                                            id="diary-password"
+                                            placeholder="输入密码..."
+                                            class="diary-password-input flex-1 px-5 py-3 rounded-xl border-2 border-[var(--border-color)] bg-transparent focus:outline-none focus:border-[var(--primary)] transition text-center text-lg tracking-widest text-90 dark:text-white/90 placeholder:text-black/40 dark:placeholder:text-white/40"
+                                        />
+                                        <button
+                                            id="unlock-btn"
+                                            class="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-bold hover:opacity-90 active:scale-95 transition"
+                                        >
+                                            解锁
+                                        </button>
+                                    </div>
+                                    <p id="diary-error" class="text-red-500 dark:text-red-400 text-center w-full mt-4 hidden flex items-center justify-center gap-2">
+                                        <span>❌</span>
+                                        <span id="error-text">密码错误，请重新输入</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- 日记内容 (解锁后显示) -->
+                            <div id="diary-content" class="hidden">
+                                <Markdown class="markdown-content">
+                                    <Content />
+                                </Markdown>
+
+                                <!-- 返回按钮 -->
+                                <div class="mt-8 pt-6 border-t border-[var(--border-color)]">
+                                    <a href="/diary-list/" class="btn-plain px-4 py-2 rounded-lg flex items-center gap-2 w-fit">
+                                        <span>←</span>
+                                        <span>返回日记列表</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        // <!-- 公开日记：直接显示内容 -->
+                        <div id="diary-content">
+                            <Markdown class="markdown-content">
+                                <Content />
+                            </Markdown>
+
+                            <!-- 返回按钮 -->
+                            <div class="mt-8 pt-6 border-t border-[var(--border-color)]">
+                                <a href="/diary-list/" class="btn-plain px-4 py-2 rounded-lg flex items-center gap-2 w-fit">
+                                    <span>←</span>
+                                    <span>返回日记列表</span>
+                                </a>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table of Contents (Desktop) -->
+    {isPrivate ? (
+        // 私密日记：使用 client:visible，只有当元素可见时才水合
+        <div id="toc-container-private" class="hidden" style="display: none;">
+            <TableOfContents client:visible target=".markdown-content" />
+        </div>
+    ) : (
+        // 公开日记：直接显示
+        <TableOfContents client:load target=".markdown-content" />
+    )}
+</MainGridLayout>
+
+<style>
+    .animate-bounce {
+        animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .animate-shake {
+        animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+        0%, 100% {
+            transform: translateX(0);
+        }
+        20%, 60% {
+            transform: translateX(-10px);
+        }
+        40%, 80% {
+            transform: translateX(10px);
+        }
+    }
+</style>

@@ -1,0 +1,41 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+---
+
+<MainGridLayout title="日记" description="我的日记">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-8 relative w-full">
+            <!-- 日记入口 -->
+            <div class="flex flex-col items-center justify-center min-h-[40vh]">
+                <div class="text-7xl mb-6 animate-float">📔</div>
+                <h1 class="text-3xl font-bold text-[var(--primary)] mb-4">我的日记</h1>
+                <p class="text-black/60 dark:text-white/60 mb-10 text-center max-w-md">
+                    记录生活的美好瞬间<br/>这里有公开日记和私密日记
+                </p>
+                <div class="w-full max-w-md flex flex-col items-center gap-4">
+                    <a href="/diary-list/" class="w-full px-8 py-3.5 rounded-xl bg-[var(--primary)] text-white font-bold hover:opacity-90 active:scale-95 transition text-center shadow-lg">
+                        浏览日记
+                    </a>
+                    <p class="text-black/40 dark:text-white/40 text-center text-sm">
+                        💡 私密日记需要输入密码才能查看
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainGridLayout>
+
+<style>
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .animate-float {
+        animation: float 2s ease-in-out infinite;
+    }
+</style>

@@ -1,0 +1,23 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+---
+
+<MainGridLayout title="电影" description="我的电影收藏">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-6 relative w-full">
+            <h1 class="text-2xl font-bold mb-6 text-[var(--primary)]">🎬 我的电影收藏</h1>
+            <p class="text-black/60 dark:text-white/60 mb-4">
+                这里是我收藏的电影列表，功能开发中...
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-8">
+                <!-- 示例电影卡片 -->
+                <div class="card-base p-4 text-center">
+                    <div class="aspect-[2/3] bg-black/10 dark:bg-white/10 rounded-lg mb-3 flex items-center justify-center">
+                        <span class="text-4xl">🎥</span>
+                    </div>
+                    <p class="font-bold text-sm">电影名称</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainGridLayout>

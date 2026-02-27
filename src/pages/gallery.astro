@@ -1,0 +1,115 @@
+---
+import MainGridLayout from '../layouts/MainGridLayout.astro'
+import { getCollection } from 'astro:content'
+import ImageWrapper from '@components/misc/ImageWrapper.astro'
+import path from 'node:path'
+
+// 获取相册配置文件
+const galleryEntries = await getCollection('gallery')
+
+// 从所有配置文件中提取照片信息
+const allPhotos = galleryEntries.flatMap(entry => {
+  const photos = entry.data.photos || []
+  const basePath = path.join('content/gallery/', entry.slug.split('/').slice(0, -1).join('/'))
+  return photos.map(photo => ({
+    ...photo,
+    _entryPath: basePath,
+    _index: Math.random().toString(36).substr(2, 9) // 唯一ID
+  }))
+})
+
+// 过滤草稿
+const visiblePhotos = allPhotos.filter(photo => !photo.draft)
+
+// 按日期排序（最新的在前）
+const sortedPhotos = visiblePhotos.sort((a, b) => {
+  const dateA = a.date || new Date(0)
+  const dateB = b.date || new Date(0)
+  return dateB.valueOf() - dateA.valueOf()
+})
+
+// 按相册分组
+const photosByAlbum = sortedPhotos.reduce((acc, photo) => {
+  const album = photo.album || 'default'
+  if (!acc[album]) {
+    acc[album] = []
+  }
+  acc[album].push(photo)
+  return acc
+}, {} as Record<string, typeof sortedPhotos>)
+
+// 获取所有相册名称
+const albums = Object.keys(photosByAlbum).sort()
+---
+
+<MainGridLayout title="相册" description="记录生活中的美好瞬间">
+  <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+    <div class="card-base z-10 px-9 py-8 relative w-full">
+      <!-- 页面头部 -->
+      <div class="flex items-center justify-between mb-8 pb-6 border-b border-[var(--border-color)]">
+        <div>
+          <h1 class="text-3xl font-bold text-[var(--primary)] mb-2">📷 相册</h1>
+          <p class="text-black/60 dark:text-white/60">记录生活中的美好瞬间</p>
+        </div>
+        <div class="text-sm text-black/50 dark:text-white/50">
+          共 {sortedPhotos.length} 张照片
+        </div>
+      </div>
+
+      <!-- 相册列表 -->
+      {albums.length > 0 ? (
+        <div class="space-y-12">
+          {albums.map(album => (
+            <div class="album-section">
+              <h2 class="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-3">
+                <span class="text-3xl">🖼️</span>
+                {album === 'default' ? '未分类' : album}
+                <span class="text-sm font-normal text-black/50 dark:text-white/50">
+                  ({photosByAlbum[album].length} 张)
+                </span>
+              </h2>
+
+              <!-- 照片网格 -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photosByAlbum[album].map((photo) => {
+                  return (
+                    <div
+                      class="gallery-photo group relative aspect-square overflow-hidden rounded-xl cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                      data-title={photo.title || ''}
+                      data-description={photo.description || ''}
+                      data-date={photo.date ? photo.date.toLocaleDateString('zh-CN') : ''}
+                      data-location={photo.location || ''}
+                      data-album={photo.album || 'default'}
+                      data-image={photo.image}
+                    >
+                      <ImageWrapper
+                        src={photo.image}
+                        basePath="content/gallery/images"
+                        alt={photo.title || '照片'}
+                        class="w-full h-full object-cover"
+                      />
+                      <!-- 悬停遮罩 -->
+                      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                        <div class="opacity-0 group-hover:opacity-100 transition-all duration-300 text-white text-center p-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                          <p class="text-sm font-medium">点击查看大图</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12 text-black/50 dark:text-white/50">
+          <div class="text-4xl mb-4">📷</div>
+          <p>还没有照片，请在 content/gallery/images/ 文件夹下添加照片，并在 content/gallery/photos.md 中配置照片信息</p>
+        </div>
+      )}
+    </div>
+  </div>
+</MainGridLayout>
