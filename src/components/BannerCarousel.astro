@@ -60,8 +60,8 @@ const maxImages = Math.max(lightImages.length, darkImages.length)
     ))}
   </div>
 
-  <!-- 站点文字和留言 (只在主页显示) -->
-  <div id="banner-text" class="absolute inset-0 flex flex-col items-center justify-center text-white/90 dark:text-white/90 z-10 pointer-events-none" style="display: none;">
+  <!-- 站点文字和留言 (只在主页显示) - 已注释 -->
+  <!-- <div id="banner-text" class="absolute inset-0 flex flex-col items-center justify-center text-white/90 dark:text-white/90 z-10 pointer-events-none" style="display: none;">
     <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-center px-4 drop-shadow-lg" style="animation: fade-in-up 1s ease-out forwards;">
       {textConfig?.title || siteConfig.title}
     </h1>
@@ -70,7 +70,7 @@ const maxImages = Math.max(lightImages.length, darkImages.length)
         {textConfig?.message || siteConfig.subtitle}
       </p>
     )}
-  </div>
+  </div> -->
 
   <!-- 轮播指示器 (由 JavaScript 控制主页隐藏) -->
   {hasMultiple && carouselConfig?.enable && (
