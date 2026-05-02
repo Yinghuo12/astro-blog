@@ -145,8 +145,8 @@ const siteLang = siteConfig.lang.replace('_', '-')
 							  src={Array.isArray(bannerDark) ? bannerDark[0] : bannerDark} position={siteConfig.banner.position} loading="eager"
 					>
 					</ImageWrapper>
-					<!-- 静态模式下的文字显示 (只在主页显示) -->
-					{isHomePage && siteConfig.banner.text && (
+					<!-- 静态模式下的文字显示 (只在主页显示) - 已注释 -->
+					<!-- {isHomePage && siteConfig.banner.text && (
 						<div id="banner-text" class="absolute inset-0 flex flex-col items-center justify-center text-white/90 dark:text-white/90 z-10 pointer-events-none">
 							<h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-center px-4 drop-shadow-lg" style="animation: fade-in-up 1s ease-out forwards;">
 								{siteConfig.banner.text.title || siteConfig.title}
@@ -157,7 +157,7 @@ const siteLang = siteConfig.lang.replace('_', '-')
 								</p>
 							)}
 						</div>
-					)}
+					)} -->
 				</>
 			)}
 		</div>

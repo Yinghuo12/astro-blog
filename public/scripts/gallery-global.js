@@ -132,6 +132,47 @@
                 return;
             }
 
+            // 查找是否点击了图片链接（链接到 /diary-images/ 的链接）
+            const link = e.target.closest('a[href*="/diary-images/"]');
+            if (link) {
+                console.log('[Gallery Global] Diary image link clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+
+                // 创建临时的 photo 对象来复用 openPhotoModal 函数
+                const imgSrc = link.href;
+                const linkText = link.textContent || '图片';
+
+                // 打开模态框
+                const modal = document.getElementById('photo-modal');
+                const modalImage = document.getElementById('modal-image');
+                const modalTitle = document.getElementById('modal-title');
+                const modalDescription = document.getElementById('modal-description');
+
+                if (modal && modalImage) {
+                    modalImage.src = imgSrc;
+                    modalTitle.textContent = linkText;
+                    modalDescription.textContent = '';
+
+                    // 隐藏额外信息
+                    const descP = document.getElementById('modal-description');
+                    if (descP) descP.style.display = 'none';
+
+                    const dateWrapper = document.getElementById('modal-date-wrapper');
+                    if (dateWrapper) dateWrapper.style.display = 'none';
+
+                    const locationWrapper = document.getElementById('modal-location-wrapper');
+                    if (locationWrapper) locationWrapper.style.display = 'none';
+
+                    const albumWrapper = document.getElementById('modal-album-wrapper');
+                    if (albumWrapper) albumWrapper.style.display = 'none';
+
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+                return;
+            }
+
             // 关闭按钮
             if (e.target.closest('#modal-close')) {
                 closePhotoModal();
