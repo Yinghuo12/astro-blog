@@ -25,3 +25,6 @@ pnpm-debug.log*
 package-lock.json
 bun.lockb
 yarn.lock
+
+# zcode test file
+gui-test-screenshots/

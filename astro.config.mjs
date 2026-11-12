@@ -42,7 +42,7 @@ export default defineConfig({
                                             // the default value `transition-` cause transition delay
                                             // when the Tailwind class `transition-all` is used
       containers: ['main'],
-      smoothScrolling: true,
+      smoothScrolling: false,
       cache: true,
       preload: true,
       accessibility: true,
@@ -56,6 +56,7 @@ export default defineConfig({
         "fa6-brands": ["*"],
         "fa6-regular": ["*"],
         "fa6-solid": ["*"],
+        "simple-icons": ["leetcode", "xiaohongshu"],
       },
     }),
     svelte(),

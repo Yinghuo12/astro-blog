@@ -17,12 +17,10 @@ export const siteConfig: SiteConfig = {
   banner: {
     enable: true,
     src: {
-      // light: 'assets/images/Mashiro.jpg' // Light mode banner (can be array for carousel: ['image1.jpg', 'image2.jpg'])
-      // dark: 'assets/images/hollowknight.jpg', // Dark mode banner (can be array for carousel)
-      light: ['assets/images/Mashiro.jpg', 'assets/images/hollowknight.jpg'],   // Light mode banner (can be array for carousel: ['image1.jpg', 'image2.jpg'])
-      dark: ['assets/images/hollowknight.jpg', 'assets/images/Mashiro.jpg']    // Dark mode banner (can be array for carousel)
+      light: 'assets/images/day.png',   // 白天 banner
+      dark: 'assets/images/night.jpeg', // 黑夜 banner
     },
-    position: 'center', // Equivalent to object-position, defaults center
+    position: 'center 62%', // Equivalent to object-position, 默认略偏下，多保留画面下方内容
     credit: {
       enable: false,         // Display the credit text of the banner image
       text: '',              // Credit text to be displayed
@@ -52,7 +50,7 @@ const navLinks = getNavLinks()
 export const navBarConfig: NavBarConfig = {
   links: [
     navLinks.home,
-    navLinks.links,
+    navLinks.archive,
     navLinks.my,
     navLinks.about,
     navLinks.others,
@@ -71,7 +69,7 @@ export const profileConfig: ProfileConfig = {
     },
     {
       name: 'LeetCode',
-      icon: 'fa6-brands:chrome',
+      icon: 'simple-icons:leetcode',
       url: 'https://leetcode.cn/u/yu-guangchao/',
     },
     {
@@ -90,6 +88,11 @@ export const profileConfig: ProfileConfig = {
       name: 'GitHub',
       icon: 'fa6-brands:github',
       url: 'https://github.com/Yinghuo12',
+    },
+    {
+      name: '小红书',
+      icon: 'simple-icons:xiaohongshu',
+      url: 'https://www.xiaohongshu.com/user/profile/65b32aa8000000000e000670',
     },
   ],
 }

@@ -8,6 +8,8 @@ import BannerCarousel from '@components/BannerCarousel.astro'
 
 import { profileConfig, siteConfig } from '@/config'
 import ConfigCarrier from '@components/ConfigCarrier.astro'
+import MusicPlayer from '@components/MusicPlayer.svelte'
+import { musicPlayerPlaylist } from '@constants/music'
 import {
   AUTO_MODE,
   DARK_MODE,
@@ -145,19 +147,8 @@ const siteLang = siteConfig.lang.replace('_', '-')
 							  src={Array.isArray(bannerDark) ? bannerDark[0] : bannerDark} position={siteConfig.banner.position} loading="eager"
 					>
 					</ImageWrapper>
-					<!-- 静态模式下的文字显示 (只在主页显示) - 已注释 -->
-					<!-- {isHomePage && siteConfig.banner.text && (
-						<div id="banner-text" class="absolute inset-0 flex flex-col items-center justify-center text-white/90 dark:text-white/90 z-10 pointer-events-none">
-							<h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-center px-4 drop-shadow-lg" style="animation: fade-in-up 1s ease-out forwards;">
-								{siteConfig.banner.text.title || siteConfig.title}
-							</h1>
-							{(siteConfig.banner.text.message || siteConfig.subtitle) && (
-								<p class="text-lg md:text-xl lg:text-2xl text-center px-4 max-w-3xl drop-shadow-md" style="animation: fade-in-up 1s ease-out 0.3s forwards; opacity: 0;">
-									{siteConfig.banner.text.message || siteConfig.subtitle}
-								</p>
-							)}
-						</div>
-					)} -->
+					<!-- banner 文字已按需求移除（配置仍保留在 config.ts 的 banner.text，如需恢复可重新添加） -->
+					
 				</>
 			)}
 		</div>
@@ -210,6 +201,9 @@ const siteLang = siteConfig.lang.replace('_', '-')
 				</div>
 			</div>
 		</div>
+
+		<!-- 音乐播放器（放在 swup 容器外，跨页面导航时播放不中断） -->
+		<MusicPlayer client:load playlist={musicPlayerPlaylist}></MusicPlayer>
 
 		<!-- 全局相册脚本 -->
 		<script src="/scripts/gallery-global.js" is:inline></script>
@@ -330,6 +324,9 @@ function loadHue() {
 function initCustomScrollbar() {
 	const bodyElement = document.querySelector('body');
 	if (!bodyElement) return;
+	// swup 每次内容替换都会调用本函数；对已初始化的目标重复 init 会破坏滚动，
+	// 单参数调用可获取现有实例，存在则跳过
+	if (OverlayScrollbars(bodyElement)) return;
 	OverlayScrollbars(
 		// docs say that a initialization to the body element would affect native functionality like window.scrollTo
 		// but just leave it here for now
@@ -347,6 +344,7 @@ function initCustomScrollbar() {
 		},
 	});
 	document.querySelectorAll('pre').forEach((ele) => {
+		if (OverlayScrollbars(ele)) return;
 		OverlayScrollbars(ele, {
 			scrollbars: {
 				theme: 'scrollbar-base scrollbar-dark px-2',
@@ -358,23 +356,78 @@ function initCustomScrollbar() {
 	});
 }
 
+/* 归档页时间线/网格视图切换（swup 导航不执行页面内联脚本，因此常驻此处并在每次内容替换后重新初始化） */
+function initArchiveViewSwitch() {
+	const btns = document.querySelectorAll<HTMLElement>('#archive-view-switch .archive-view-btn');
+	if (btns.length === 0) return;
+	const timeline = document.getElementById('archive-timeline-view');
+	const grid = document.getElementById('archive-grid-view');
+	if (!timeline || !grid) return;
+
+	const apply = (view: string, save: boolean) => {
+		const isGrid = view === 'grid';
+		grid.classList.toggle('hidden', !isGrid);
+		timeline.classList.toggle('hidden', isGrid);
+		btns.forEach(btn => btn.classList.toggle('current', btn.dataset.view === view));
+		if (save) {
+			try { localStorage.setItem('archive-view', view); } catch { /* ignore */ }
+		}
+	};
+
+	let saved: string | null = null;
+	try { saved = localStorage.getItem('archive-view'); } catch { /* ignore */ }
+	apply(saved === 'grid' ? 'grid' : 'timeline', false);
+
+	btns.forEach(btn => {
+		btn.addEventListener('click', () => apply(btn.dataset.view || 'timeline', true));
+	});
+}
+
+/* 透明导航：滚过 banner 后挂上 navbar-float 恢复磨砂卡片底，滚回 banner 内再变透明 */
+function updateNavbarFloat() {
+	const navbar = document.getElementById('navbar')
+	if (!navbar || !navbar.classList.contains('navbar-transparent')) return
+	const banner = document.getElementById('banner-wrapper')
+	if (!banner) return
+	const threshold = Math.max(0, banner.offsetHeight - navbar.offsetHeight)
+	navbar.classList.toggle('navbar-float', window.scrollY > threshold)
+}
+
+let navbarFloatBound = false
+function initNavbarFloat() {
+	if (navbarFloatBound) return
+	navbarFloatBound = true
+	window.addEventListener('scroll', updateNavbarFloat, { passive: true })
+	window.addEventListener('resize', updateNavbarFloat, { passive: true })
+}
+
+/* 归档页无封面文章：每次访问从封面池随机（不重复）重新分配，swup 导航后同样生效 */
+function shuffleRandomCovers() {
+	const pool = Array.from(document.querySelectorAll<HTMLImageElement>('#cover-pool img'))
+	const targets = Array.from(document.querySelectorAll<HTMLImageElement>('[data-random-cover]'))
+	if (pool.length === 0 || targets.length === 0) return
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1))
+		;[pool[i], pool[j]] = [pool[j], pool[i]]
+	}
+	targets.forEach((img, i) => {
+		const source = pool[i % pool.length]
+		const src = source.getAttribute('src')
+		const srcset = source.getAttribute('srcset')
+		if (src) img.setAttribute('src', src)
+		if (srcset) img.setAttribute('srcset', srcset)
+	})
+}
+
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
 	loadHue();
 	initCustomScrollbar();
-	updateBannerTextVisibility();
-}
-
-// 更新 banner 文字显示状态
-function updateBannerTextVisibility() {
-	const isHome = window.location.pathname === '/' || window.location.pathname === '/index';
-	const bannerTexts = document.querySelectorAll('#banner-text');
-	bannerTexts.forEach(el => {
-		if (el instanceof HTMLElement) {
-			el.style.display = isHome ? 'flex' : 'none';
-		}
-	});
+	initArchiveViewSwitch();
+	initNavbarFloat();
+	updateNavbarFloat();
+	shuffleRandomCovers();
 }
 
 /* Load settings when entering the site */
@@ -402,6 +455,13 @@ const setup = () => {
 		document.documentElement.style.setProperty('--content-delay', '0ms')
 	})
 	window.swup.hooks.on('content:replace', initCustomScrollbar)
+	window.swup.hooks.on('content:replace', initArchiveViewSwitch)
+	window.swup.hooks.on('content:replace', updateNavbarFloat)
+	window.swup.hooks.on('content:replace', shuffleRandomCovers)
+	// smoothScrolling(ScrollPlugin) 与本站滚动冲突会锁死页面，已禁用；导航后的回顶由这里接管
+	window.swup.hooks.on('content:replace', () => {
+		window.scrollTo(0, 0)
+	})
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked
 		const bodyElement = document.querySelector('body')

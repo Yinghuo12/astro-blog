@@ -50,7 +50,7 @@ rainbow-dark = linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30)
   --radius-large 1rem
 
   --banner-height-home 65vh
-  --banner-height 35vh
+  --banner-height 32vh
 
   --content-delay 150ms
 
@@ -307,6 +307,61 @@ color_set({
         border: none !important;
         box-shadow: none !important;
     }
+}
+/* 透明态：导航行背景图片模糊化（真实条带元素，位于内容层之下） */
+#navbar .navbar-blur {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+/* 滚动磨砂态由卡片自己的磨砂背景接管，关闭条带避免叠加 */
+#navbar.navbar-float .navbar-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+/* 透明态：白天黑色字体（浅色投影），黑夜白色字体（深色投影） */
+#navbar.navbar-transparent {
+    color: rgba(0, 0, 0, 0.85);
+    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.6);
+}
+#navbar.navbar-transparent :is(a, button, span, div, input) {
+    text-shadow: inherit;
+}
+#navbar.navbar-transparent a,
+#navbar.navbar-transparent button {
+    color: rgba(0, 0, 0, 0.85);
+}
+#navbar.navbar-transparent .btn-plain:hover,
+#navbar.navbar-transparent .btn-plain:active {
+    color: #000;
+    background: rgba(0, 0, 0, 0.08);
+}
+:root.dark #navbar.navbar-transparent {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+:root.dark #navbar.navbar-transparent a,
+:root.dark #navbar.navbar-transparent button {
+    color: rgba(255, 255, 255, 0.92);
+}
+:root.dark #navbar.navbar-transparent .btn-plain:hover,
+:root.dark #navbar.navbar-transparent .btn-plain:active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+}
+/* 滚过 banner 后：恢复磨砂卡片底并还原配色 */
+#navbar.navbar-float {
+    color: inherit;
+    text-shadow: none;
+}
+#navbar.navbar-float :is(a, button) {
+    color: inherit;
+}
+#navbar.navbar-float > .card-base {
+    background: color-mix(in oklab, var(--page-bg) 82%, transparent) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: none !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
 }
 #sidebar {
     animation-delay: 100ms

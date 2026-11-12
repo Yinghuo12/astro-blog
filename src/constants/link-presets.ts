@@ -23,12 +23,9 @@ export function getLinkPresets(): { [key in LinkPreset]: NavBarLink } {
 export function getNavLinks() {
   return {
     home: { name: '主页', url: '/' },
-    links: {
-      name: 'Links',
-      children: [
-        { name: 'GitHub', url: 'https://github.com/Yinghuo12', external: true },
-        { name: 'Bilibili', url: 'https://space.bilibili.com/60689612?spm_id_from=333.1007.0.0', external: true },
-      ]
+    archive: {
+      name: '归档',
+      url: '/archive/',
     } as NavBarLink,
     my: {
       name: '我的',

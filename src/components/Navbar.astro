@@ -22,11 +22,12 @@ let links: NavBarLink[] = navBarConfig.links.map(
 )
 ---
 <div id="navbar" class:list={["sticky top-0 z-50 onload-animation", siteConfig.banner.enable && "navbar-transparent"]}>
+    <!-- 导航行背景模糊条：位于内容层之下，把这一行背后的图片模糊化 -->
+    <div class="navbar-blur absolute inset-0 pointer-events-none" aria-hidden="true"></div>
     <div class="absolute h-8 left-0 right-0 -top-8 transition" class:list={[siteConfig.banner.enable && "!bg-transparent"]}></div> <!-- used for onload animation -->
     <div class:list={[
         className,
-        "card-base overflow-visible max-w-[var(--page-width)] h-[4.5rem] rounded-t-none mx-auto flex items-center justify-between px-4",
-        siteConfig.banner.enable && "!bg-[var(--page-bg)] backdrop-blur-md border-0"
+        "relative z-10 card-base overflow-visible max-w-[var(--page-width)] h-[4.5rem] rounded-t-none mx-auto flex items-center justify-between px-4",
     ]}>
         <a href={url('/')} class="btn-plain scale-animation rounded-lg h-[3.25rem] px-5 font-bold active:scale-95">
             <div class="flex flex-row text-[var(--primary)] items-center text-md">
@@ -129,32 +130,22 @@ let links: NavBarLink[] = navBarConfig.links.map(
 </style>
 
 <script>
-function switchTheme() {
-    if (localStorage.theme === 'dark') {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
-    } else {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
-    }
-}
-
 function loadButtonScript() {
-    let switchBtn = document.getElementById("scheme-switch");
-    switchBtn!.addEventListener("click", function () {
-        switchTheme()
-    });
-
-    let settingBtn = document.getElementById("display-settings-switch");
-    settingBtn!.addEventListener("click", function () {
-        let settingPanel = document.getElementById("display-setting");
-        settingPanel!.classList.toggle("float-panel-closed");
-    });
-
-    let menuBtn = document.getElementById("nav-menu-switch");
-    menuBtn!.addEventListener("click", function () {
-        let menuPanel = document.getElementById("nav-menu-panel");
-        menuPanel!.classList.toggle("float-panel-closed");
+    // 注意：@swup/astro 在每次 swup 导航后都会触发 astro:after-swap，此函数会被反复调用；
+    // 导航栏在 swup 容器之外、按钮元素不会更换，若直接给按钮叠加绑定会随导航次数翻倍，
+    // 导致 toggle 相互抵消（表现为按钮"没反应"）。因此这里使用一次性事件委托：
+    if ((window as any).__navbarButtonsDelegated) return
+    ;(window as any).__navbarButtonsDelegated = true
+    document.addEventListener("click", (event) => {
+        const target = event.target
+        if (!(target instanceof Node)) return
+        const settingBtn = document.getElementById("display-settings-switch")
+        const menuBtn = document.getElementById("nav-menu-switch")
+        if (settingBtn && (target === settingBtn || settingBtn.contains(target))) {
+            document.getElementById("display-setting")?.classList.toggle("float-panel-closed")
+        } else if (menuBtn && (target === menuBtn || menuBtn.contains(target))) {
+            document.getElementById("nav-menu-panel")?.classList.toggle("float-panel-closed")
+        }
     });
 }
 

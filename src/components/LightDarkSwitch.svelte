@@ -16,6 +16,7 @@ let mode: LIGHT_DARK_MODE = AUTO_MODE
 
 onMount(() => {
   mode = getStoredTheme()
+  console.log(mode);
   const darkModePreference = window.matchMedia('(prefers-color-scheme: dark)')
   const changeThemeWhenSchemeChanged: Parameters<
     typeof darkModePreference.addEventListener<'change'>
@@ -43,7 +44,8 @@ function toggleScheme() {
       break
     }
   }
-  switchScheme(seq[(i + 1) % seq.length])
+  
+  switchScheme(seq[(i + 1) % seq.length]);
 }
 
 function showPanel() {
