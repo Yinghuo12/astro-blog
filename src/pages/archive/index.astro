@@ -2,6 +2,7 @@
 import MainGridLayout from '@layouts/MainGridLayout.astro'
 import ArchivePanel from '@components/ArchivePanel.astro'
 import ImageWrapper from '@components/misc/ImageWrapper.astro'
+import { Icon } from 'astro-icon/components'
 import { Image } from 'astro:assets'
 import path from 'path'
 import { getSortedPosts } from '@utils/content-utils'
@@ -10,6 +11,10 @@ import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
 
 const posts = await getSortedPosts()
+
+// 统计：文章数 / 标签数 / 分类数
+const allTags = [...new Set(posts.flatMap(p => p.data.tags || []))].sort()
+const allCategories = [...new Set(posts.map(p => p.data.category).filter(Boolean))]
 
 // 无封面文章的默认封面池：assets/cover 下所有图片（注意本文件位于 src/pages/archive/，需上两级）
 const coverPool = Object.values(
@@ -77,6 +82,34 @@ const interval = 50
         </div>
     </div>
 
+    <!-- 统计：文章 / 标签 / 分类 -->
+    <div class="grid grid-cols-3 gap-4 mb-4 onload-animation">
+        <div class="card-base px-4 py-4 flex flex-col items-center gap-0.5">
+            <Icon name="material-symbols:edit-note-outline-rounded" class="text-[1.9rem] text-[var(--primary)] mb-1"></Icon>
+            <div class="text-sm text-black/50 dark:text-white/50 transition">文章</div>
+            <div class="text-xl font-bold text-90 transition">{posts.length}</div>
+        </div>
+        <div class="card-base px-4 py-4 flex flex-col items-center gap-0.5">
+            <Icon name="material-symbols:label-outline-rounded" class="text-[1.9rem] text-[var(--primary)] mb-1"></Icon>
+            <div class="text-sm text-black/50 dark:text-white/50 transition">标签</div>
+            <div class="text-xl font-bold text-90 transition">{allTags.length}</div>
+        </div>
+        <div class="card-base px-4 py-4 flex flex-col items-center gap-0.5">
+            <Icon name="material-symbols:category-outline-rounded" class="text-[1.9rem] text-[var(--primary)] mb-1"></Icon>
+            <div class="text-sm text-black/50 dark:text-white/50 transition">分类</div>
+            <div class="text-xl font-bold text-90 transition">{allCategories.length}</div>
+        </div>
+    </div>
+
+    <!-- 标签过滤 -->
+    <div id="archive-tag-filter" class="card-base px-4 py-3 mb-4 flex flex-wrap gap-2 items-center onload-animation">
+        <span class="text-sm font-bold text-black/40 dark:text-white/40 transition mr-1">标签筛选</span>
+        <button type="button" data-tag="" class="archive-tag-chip current">全部</button>
+        {allTags.map(tag => (
+            <button type="button" data-tag={tag} class="archive-tag-chip">{tag}</button>
+        ))}
+    </div>
+
     <!-- 时间线视图 -->
     <div id="archive-timeline-view" class="onload-animation">
         <ArchivePanel></ArchivePanel>
@@ -86,6 +119,7 @@ const interval = 50
     <div id="archive-grid-view" class="hidden transition grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 onload-animation">
         {posts.map(post => (
             <a href={getPostUrlBySlug(post.slug)} aria-label={post.data.title}
+               data-tags={(post.data.tags || []).join(',')}
                class="card-base group flex flex-col overflow-hidden rounded-[var(--radius-large)] transition hover:bg-[var(--btn-plain-bg-hover)] active:scale-[0.98] onload-animation"
                style={`animation-delay: calc(var(--content-delay) + ${(delay++) * interval}ms);`}
             >
@@ -127,5 +161,29 @@ const interval = 50
 #archive-view-switch .archive-view-btn.current {
     background: var(--btn-regular-bg);
     color: var(--btn-content);
+}
+/* 标签筛选小胶囊 */
+.archive-tag-chip {
+    height: 1.9rem;
+    padding: 0 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    transition: all 0.25s ease;
+}
+:root.dark .archive-tag-chip {
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+.archive-tag-chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.archive-tag-chip.current {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 </style>

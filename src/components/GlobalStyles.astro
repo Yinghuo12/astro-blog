@@ -49,7 +49,7 @@ rainbow-dark = linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30)
 :root
   --radius-large 1rem
 
-  --banner-height-home 65vh
+  --banner-height-home 100svh
   --banner-height 32vh
 
   --content-delay 150ms
@@ -308,10 +308,15 @@ color_set({
         box-shadow: none !important;
     }
 }
-/* 透明态：导航行背景图片模糊化（真实条带元素，位于内容层之下） */
+/* 透明态：导航行磨砂玻璃效果（强模糊 + 较深染色保证文字可读） */
 #navbar .navbar-blur {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.32);
+    will-change: backdrop-filter;
+    backdrop-filter: blur(30px) saturate(1.5);
+    -webkit-backdrop-filter: blur(30px) saturate(1.5);
+}
+:root.dark #navbar .navbar-blur {
+    background: rgba(0, 0, 0, 0.36);
 }
 /* 滚动磨砂态由卡片自己的磨砂背景接管，关闭条带避免叠加 */
 #navbar.navbar-float .navbar-blur {
@@ -357,6 +362,8 @@ color_set({
     color: inherit;
 }
 #navbar.navbar-float > .card-base {
+    /* 回退：不支持 color-mix 的浏览器使用实色底，保证磨砂态一定有背景（否则会变成全透明压在正文上） */
+    background: var(--page-bg) !important;
     background: color-mix(in oklab, var(--page-bg) 82%, transparent) !important;
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -374,6 +381,49 @@ color_set({
 }
 #banner-credit {
     animation-delay: 400ms;
+}
+
+/* markdown 代码块：macOS 窗口风格（左上红黄绿三点 + 右上语言标签） */
+pre.astro-code {
+    position: relative;
+    padding-top: 2.4rem;
+    border-radius: 0.75rem;
+}
+pre.astro-code::before {
+    content: "";
+    position: absolute;
+    top: 0.95rem;
+    left: 1.1rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background: #ff5f57;
+    box-shadow: 1.25rem 0 0 #febc2e, 2.5rem 0 0 #28c840;
+    z-index: 1;
+}
+pre.astro-code::after {
+    content: attr(data-language);
+    position: absolute;
+    top: 0.92rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #7d8590;
+    text-transform: capitalize;
+    z-index: 1;
+}
+/* OverlayScrollbars 接管 pre 后会把 padding 移入滚动视口，标题栏空间需要保留在宿主上 */
+pre.astro-code .os-viewport,
+pre.astro-code .os-content {
+    padding-top: 0 !important;
+}
+/* banner 图片强制铺满高度：astro Image 输出的 width/height 属性会让部分浏览器
+   将 img 按原始宽高比缩放（上下露出页面底色），强制 100% 高度配合 object-cover 修复 */
+#banner-wrapper img {
+    height: 100% !important;
+    width: 100% !important;
 }
 
 

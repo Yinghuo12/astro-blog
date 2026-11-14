@@ -1,0 +1,141 @@
+---
+import { getSortedPosts } from '@utils/content-utils'
+import { getDir, getPostUrlBySlug, url } from '@utils/url-utils'
+import ImageWrapper from '@components/misc/ImageWrapper.astro'
+import { Icon } from 'astro-icon/components'
+import { Image } from 'astro:assets'
+import path from 'path'
+
+const FEATURED_COUNT = 5
+
+const allPosts = await getSortedPosts()
+const featured = allPosts.slice(0, FEATURED_COUNT)
+
+const coverPool = Object.values(
+  import.meta.glob<{ default: ImageMetadata }>('../assets/cover/*', { eager: true }),
+)
+function pickCover(slug: string, fallbackIndex: number): ImageMetadata | null {
+  if (coverPool.length === 0) return null
+  let hash = 0
+  for (const ch of slug) hash = (hash * 31 + ch.charCodeAt(0)) | 0
+  const idx = (Math.abs(hash) + fallbackIndex) % coverPool.length
+  return coverPool[idx].default
+}
+
+function formatFullDate(date: Date): string {
+  const y = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${y}-${month}-${day}`
+}
+
+function excerptOf(post: any): string {
+  return post.data.description || '点击继续阅读，查看这篇文章的完整内容。'
+}
+---
+
+<section id="home-featured" class="mb-4">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+        <!-- 左：精选文章 标题 + 描述 + 查看所有随笔 -->
+        <div class="card-base px-8 py-6 flex flex-col items-start text-left">
+            <h2 class="flex items-center font-bold text-xl text-90 transition mb-3
+                       before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)] before:mr-3">
+                精选文章
+            </h2>
+            <p class="text-sm text-black/50 dark:text-white/50 transition leading-relaxed my-auto py-3">
+                从技术笔记到生活随笔，收录近期值得一读的内容。精选列表会随更新不断变化，点击右侧卡片即可开始阅读，也可以直达归档漫游全部文章。
+            </p>
+            <a href={url('/archive/')}"
+               class="group inline-flex items-center gap-1 font-bold text-[var(--primary)] transition-all hover:gap-2 active:scale-95 w-fit mt-3">
+                查看所有随笔
+                <Icon name="material-symbols:chevron-right-rounded" class="text-[1.25rem] transition-transform group-hover:translate-x-0.5"></Icon>
+            </a>
+        </div>
+
+        <!-- 右：单卡轮播（图片铺满整卡，自动切换，圆点在图片下方） -->
+        <div id="featured-carousel" class="flex flex-col h-[19rem]">
+            <div class="relative flex-1 overflow-hidden rounded-[var(--radius-large)] shadow-lg bg-[var(--card-bg)]">
+                {featured.map((post: any, i: number) => (
+                    <a href={getPostUrlBySlug(post.slug)} aria-label={post.data.title}
+                       class:list={["fc-slide", "group", i === 0 ? '' : 'fc-off']}
+                       data-index={i}>
+                        <!-- 图片铺满整卡 -->
+                        {post.data.image ? (
+                            <ImageWrapper src={post.data.image} basePath={path.join('content/posts/', getDir(post.id))}
+                                          alt={post.data.title} class="absolute inset-0">
+                            </ImageWrapper>
+                        ) : pickCover(post.slug, i) ? (
+                            <Image src={pickCover(post.slug, i)!} alt={post.data.title} class="absolute inset-0 w-full h-full object-cover"
+                                   loading={i <= 1 ? 'eager' : 'lazy'} />
+                        ) : (
+                            <div class="absolute inset-0 bg-black/10 dark:bg-white/10"></div>
+                        )}
+                        <!-- 底部渐变遮罩，文字压在图片上 -->
+                        <div class="absolute inset-x-0 bottom-0 top-1/3 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none"></div>
+                        <!-- 文字区：标题 → 摘要 → 日期（带日历图标） -->
+                        <div class="absolute inset-x-0 bottom-0 px-5 pb-4 pt-3 flex flex-col pointer-events-none">
+                            <div class="font-bold text-lg text-white transition line-clamp-1 drop-shadow-lg group-hover:text-[var(--primary)]">
+                                {post.data.title}
+                            </div>
+                            <div class="text-sm text-white/75 transition mt-1 line-clamp-2 leading-relaxed drop-shadow flex-1">
+                                {excerptOf(post)}
+                            </div>
+                            <div class="flex items-center gap-1 text-sm text-white/75 transition mt-2 drop-shadow">
+                                <Icon name="material-symbols:calendar-month-outline-rounded" class="text-[1.05rem]"></Icon>
+                                <span>{formatFullDate(post.data.published)}</span>
+                            </div>
+                        </div>
+                    </a>
+                ))}
+                <!-- 左右切换箭头 -->
+                <button type="button" id="fc-prev" aria-label="上一张"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full
+                               flex items-center justify-center text-white/90 bg-black/30 md:backdrop-blur-sm
+                               border border-white/25 shadow-lg hover:bg-black/50 active:scale-90 transition-all">
+                    <Icon name="material-symbols:chevron-left-rounded" class="text-[1.6rem]"></Icon>
+                </button>
+                <button type="button" id="fc-next" aria-label="下一张"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full
+                               flex items-center justify-center text-white/90 bg-black/30 md:backdrop-blur-sm
+                               border border-white/25 shadow-lg hover:bg-black/50 active:scale-90 transition-all">
+                    <Icon name="material-symbols:chevron-right-rounded" class="text-[1.6rem]"></Icon>
+                </button>
+            </div>
+            <!-- 圆点指示器：图片下方（不压图） -->
+            <div id="fc-dots" class="flex justify-center items-center gap-2 pt-3 shrink-0">
+                {featured.map((_: any, i: number) => (
+                    <button type="button" class:list={["fc-dot", i === 0 ? 'active' : '']}
+                            data-index={i} aria-label={`切换到第 ${i + 1} 张`}></button>
+                ))}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style is:global>
+/* 单卡轮播：叠层交叉淡入淡出，图片铺满整卡 */
+#featured-carousel .fc-slide {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.7s ease;
+}
+#featured-carousel .fc-off {
+    opacity: 0;
+    pointer-events: none;
+}
+/* 圆点指示器：位于图片下方（页面背景上），主题色高亮 */
+#fc-dots .fc-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: rgb(0 0 0 / 0.2);
+    transition: all 0.3s ease;
+}
+:root.dark #fc-dots .fc-dot {
+    background: rgb(255 255 255 / 0.35);
+}
+#fc-dots .fc-dot.active {
+    width: 1.25rem;
+    background: var(--primary);
+}
+</style>

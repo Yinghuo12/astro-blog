@@ -5,6 +5,7 @@ import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 import ImageWrapper from '@components/misc/ImageWrapper.astro'
 import BannerCarousel from '@components/BannerCarousel.astro'
+import { Icon } from 'astro-icon/components'
 
 import { profileConfig, siteConfig } from '@/config'
 import ConfigCarrier from '@components/ConfigCarrier.astro'
@@ -149,6 +150,13 @@ const siteLang = siteConfig.lang.replace('_', '-')
 					</ImageWrapper>
 					<!-- banner 文字已按需求移除（配置仍保留在 config.ts 的 banner.text，如需恢复可重新添加） -->
 					
+					<!-- 主页第一屏：底部居中向下箭头（点击滚到内容区；仅主页显示） -->
+					<button id="banner-scroll-down" aria-label="向下滚动浏览"
+							class="absolute left-1/2 -translate-x-1/2 bottom-8 z-20 h-12 w-12 rounded-full
+							flex items-center justify-center text-white/90 bg-white/15 backdrop-blur-sm
+							border border-white/30 shadow-lg hover:bg-white/25 active:scale-90 transition-all">
+						<Icon name="material-symbols:keyboard-double-arrow-down-rounded" class="text-[1.6rem] scroll-bounce"></Icon>
+					</button>
 				</>
 			)}
 		</div>
@@ -221,20 +229,21 @@ const siteLang = siteConfig.lang.replace('_', '-')
 
 @layer components {
 	.enable-banner.is-home #banner-wrapper {
-		@apply h-[var(--banner-height)] md:h-[var(--banner-height-home)]
+		@apply h-[var(--banner-height-home)]
 	}
 	.enable-banner #banner-wrapper {
 		@apply h-[var(--banner-height)]
 	}
 
 	.enable-banner #top-row {
-		@apply h-[calc(var(--banner-height)_-_4.5rem)]
+		@apply h-[calc(var(--banner-height)_-_3.5rem)]
 	}
 	.enable-banner:not(.is-home) #top-row {
 		@apply h-[var(--banner-height)]
 	}
+	/* 主页：banner 独占完整第一屏，内容从下一屏开始 */
 	.enable-banner.is-home #top-row {
-		@apply h-[calc(var(--banner-height)_-_4.5rem)] md:h-[calc(var(--banner-height-home)_-_4.5rem)]
+		@apply h-[var(--banner-height-home)]
 	}
 }
 </style>
@@ -419,15 +428,120 @@ function shuffleRandomCovers() {
 	})
 }
 
+/* 首屏向下箭头：点击平滑滚动到 banner 之下（元素在 swup 容器外持久存在，需防重复绑定） */
+function initBannerScrollDown() {
+	const btn = document.getElementById('banner-scroll-down') as (HTMLElement & { __bound?: boolean }) | null
+	if (!btn || btn.__bound) return
+	btn.__bound = true
+	btn.addEventListener('click', () => {
+		const banner = document.getElementById('banner-wrapper')
+		if (!banner) return
+		window.scrollTo({ top: banner.offsetHeight, behavior: 'smooth' })
+	})
+}
+
+/* 主页精选文章轮播：三卡同显，自动切换 + 箭头/点击侧边虚化卡（swup 导航后重新初始化，旧定时器先清理） */
+let fcTimer: number | undefined
+
+function initFeaturedCarousel() {
+	const root = document.getElementById('featured-carousel')
+	if (fcTimer) {
+		window.clearInterval(fcTimer)
+		fcTimer = undefined
+	}
+	if (!root) return
+	const slides = Array.from(root.querySelectorAll<HTMLElement>('.fc-slide'))
+	const dots = Array.from(root.querySelectorAll<HTMLElement>('.fc-dot'))
+	if (slides.length === 0) return
+	let current = 0
+
+	const show = (idx: number) => {
+		current = (idx + slides.length) % slides.length
+		slides.forEach((s, i) => s.classList.toggle('fc-off', i !== current))
+		dots.forEach((d, i) => d.classList.toggle('active', i === current))
+	}
+	const restart = () => {
+		if (fcTimer) window.clearInterval(fcTimer)
+		fcTimer = window.setInterval(() => show(current + 1), 5000)
+	}
+
+	// 圆点直达
+	dots.forEach((d) => {
+		d.addEventListener('click', () => {
+			show(Number(d.dataset.index || 0))
+			restart()
+		})
+	})
+	// 左右箭头切换
+	root.querySelector('#fc-prev')?.addEventListener('click', () => {
+		show(current - 1)
+		restart()
+	})
+	root.querySelector('#fc-next')?.addEventListener('click', () => {
+		show(current + 1)
+		restart()
+	})
+	show(0)
+	restart()
+}
+
+/* 归档页标签过滤：按标签隐藏时间线条目/网格卡片，空年份分组整体隐藏（swup 导航后重新初始化） */
+function initArchiveTagFilter() {
+	const filter = document.getElementById('archive-tag-filter')
+	if (!filter) return
+	const chips = Array.from(filter.querySelectorAll<HTMLElement>('.archive-tag-chip'))
+
+	const apply = (tag: string) => {
+		document.querySelectorAll<HTMLElement>('#archive-timeline-view [data-tags], #archive-grid-view [data-tags]').forEach(el => {
+			const tags = (el.dataset.tags || '').split(',').filter(Boolean)
+			el.classList.toggle('hidden', !!tag && !tags.includes(tag))
+		})
+		document.querySelectorAll<HTMLElement>('#archive-timeline-view .archive-year-group').forEach(group => {
+			const visible = Array.from(group.querySelectorAll('[data-tags]')).some(el => !el.classList.contains('hidden'))
+			group.classList.toggle('hidden', !visible)
+		})
+		chips.forEach(c => c.classList.toggle('current', (c.dataset.tag || '') === tag))
+	}
+
+	chips.forEach(c => {
+		c.addEventListener('click', () => apply(c.dataset.tag || ''))
+	})
+	apply('')
+}
+
+/* 相册页相册过滤：按相册显示/隐藏照片分区（swup 导航后重新初始化） */
+function initGalleryAlbumFilter() {
+	const filter = document.getElementById('gallery-album-filter')
+	if (!filter) return
+	const chips = Array.from(filter.querySelectorAll<HTMLElement>('.gallery-album-chip'))
+	const sections = Array.from(document.querySelectorAll<HTMLElement>('.gallery-album-section'))
+
+	const apply = (album: string) => {
+		sections.forEach(section => {
+			section.classList.toggle('hidden', !!album && section.dataset.album !== album)
+		})
+		chips.forEach(c => c.classList.toggle('current', (c.dataset.album || '') === album))
+	}
+
+	chips.forEach(c => {
+		c.addEventListener('click', () => apply(c.dataset.album || ''))
+	})
+	apply('')
+}
+
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
 	loadHue();
 	initCustomScrollbar();
 	initArchiveViewSwitch();
+	initArchiveTagFilter();
+	initGalleryAlbumFilter();
 	initNavbarFloat();
 	updateNavbarFloat();
 	shuffleRandomCovers();
+	initBannerScrollDown();
+	initFeaturedCarousel();
 }
 
 /* Load settings when entering the site */
@@ -548,6 +662,19 @@ if (window.swup) {
 #banner-wrapper
 	top: 0
 	opacity: 1
+/* 首屏向下箭头只在主页显示（body.is-home 由 swup 导航钩子维护） */
+#banner-scroll-down
+	display: none
+body.is-home #banner-scroll-down
+	display: flex
+/* 箭头上下弹跳提示可滚动 */
+@keyframes scroll-bounce-keyframes
+	0%, 100%
+		transform: translateY(0)
+	50%
+		transform: translateY(5px)
+.scroll-bounce
+	animation: scroll-bounce-keyframes 1.6s ease-in-out infinite
 .banner-closed
 	#banner-wrapper
 		top: -120px

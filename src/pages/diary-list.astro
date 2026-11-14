@@ -1,6 +1,7 @@
 ---
 import MainGridLayout from '../layouts/MainGridLayout.astro'
 import { getCollection } from 'astro:content'
+import { Icon } from 'astro-icon/components'
 import { url } from '../utils/url-utils'
 
 const allDiaries = await getCollection('diary')
@@ -13,86 +14,101 @@ const sortedDiaries = allDiaries.sort((a, b) => {
   // 置顶状态相同，按日期降序排序
   return b.data.published.valueOf() - a.data.published.valueOf()
 })
+
+function formatDiaryDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = (date.getMonth() + 1).toString().padStart(2, '0')
+  const d = date.getDate().toString().padStart(2, '0')
+  return `${y}.${m}.${d}`
+}
 ---
 <MainGridLayout title="我的日记" description="记录生活的美好瞬间">
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
-        <div class="card-base z-10 px-9 py-8 relative w-full">
-            <!-- 页面头部 -->
-            <div class="flex items-center justify-between mb-8 pb-6 border-b border-[var(--border-color)]">
-                <div>
-                    <h1 class="text-3xl font-bold text-[var(--primary)] mb-2">📔 我的日记</h1>
-                    <p class="text-black/60 dark:text-white/60">记录生活的美好瞬间</p>
-                </div>
-                <div class="text-sm text-black/50 dark:text-white/50">
-                    共 {sortedDiaries.length} 篇日记
-                </div>
+    <div class="onload-animation">
+        <!-- 页面头部 -->
+        <div class="flex items-end justify-between gap-4 mb-4">
+            <div>
+                <h1 class="flex items-center font-bold text-2xl text-90 transition mb-1
+                           before:w-1 before:h-6 before:rounded-md before:bg-[var(--primary)] before:mr-3">
+                    我的日记
+                </h1>
+                <p class="text-sm text-black/45 dark:text-white/45 transition pl-4">Diary · 记录生活的美好瞬间</p>
             </div>
-
-            <!-- 日记列表 - 参考主页的样式 -->
-            <div class="flex flex-col gap-4 md:gap-6">
-                {sortedDiaries.map((diary) => (
-                    <a href={url(`/diary/${diary.slug}/`)} class="diary-card group relative block w-full rounded-[var(--radius-large)] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl bg-[var(--card-bg)] border border-[var(--line-divider)]" data-private={diary.data.private ? 'true' : 'false'} data-pinned={diary.data.pinned ? 'true' : 'false'}>
-                        <div class="flex items-start gap-4 p-6 md:p-8">
-                            <!-- 心情图标 -->
-                            <div class="flex-shrink-0 text-4xl md:text-5xl">
-                                {diary.data.mood || '📝'}
-                            </div>
-
-                            <!-- 内容区域 -->
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-bold text-xl md:text-2xl mb-2 flex items-center gap-2 text-90 hover:text-[var(--primary)] dark:text-white/90 dark:hover:text-[var(--primary)] transition">
-                                    {diary.data.pinned && <span class="text-xl" title="置顶日记">📌</span>}
-                                    {diary.data.title}
-                                    {diary.data.private && (
-                                        <span class="text-xl" title="私密日记">🔒</span>
-                                    )}
-                                </h3>
-
-                                <div class="flex items-center gap-2 text-sm text-black/50 dark:text-white/50 mb-3">
-                                    <span>📅 {diary.data.published.toLocaleDateString('zh-CN')}</span>
-                                </div>
-
-                                {diary.data.description && (
-                                    <p class="text-black/70 dark:text-white/70 text-sm leading-relaxed line-clamp-2">
-                                        {diary.data.description}
-                                    </p>
-                                )}
-
-                                {diary.data.tags && diary.data.tags.length > 0 && (
-                                    <div class="flex items-center gap-2 mt-3 flex-wrap">
-                                        {diary.data.tags.map(tag => (
-                                            <span class="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs">
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <!-- 箭头图标 (hover时显示) -->
-                            <div class="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg class="w-6 h-6 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                            </div>
-                        </div>
-                    </a>
-                ))}
+            <div class="flex items-center gap-1.5 text-sm text-black/50 dark:text-white/50 transition shrink-0 pb-1">
+                <Icon name="material-symbols:edit-note-outline-rounded" class="text-[1.35rem] text-[var(--primary)]"></Icon>
+                共 {sortedDiaries.length} 篇
             </div>
-
-            {sortedDiaries.length === 0 && (
-                <div class="text-center py-12 text-black/50 dark:text-white/50">
-                    <div class="text-4xl mb-4">📝</div>
-                    <p>还没有日记，快来写第一篇吧！</p>
-                </div>
-            )}
         </div>
+
+        <!-- 日记列表 -->
+        <div class="flex flex-col gap-3.5">
+            {sortedDiaries.map((diary) => (
+                <a href={url(`/diary/${diary.slug}/`)}
+                   class="diary-card group flex items-center gap-4 md:gap-5 px-5 md:px-6 py-5 rounded-[var(--radius-large)]
+                          bg-[var(--card-bg)] transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99]"
+                   data-pinned={diary.data.pinned ? 'true' : 'false'}>
+                    <!-- 心情徽章 -->
+                    <div class="shrink-0 h-12 w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center text-3xl
+                                bg-[oklch(0.92_0.04_var(--hue))] dark:bg-white/10 transition group-hover:scale-110 group-hover:bg-[var(--primary)]/15">
+                        {diary.data.mood || '📝'}
+                    </div>
+
+                    <!-- 内容区域 -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-lg text-90 transition group-hover:text-[var(--primary)] flex items-center gap-2">
+                            <span class="truncate">{diary.data.title}</span>
+                            {diary.data.pinned && (
+                                <span class="shrink-0 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.68rem] font-bold
+                                             bg-[var(--primary)]/12 text-[var(--primary)]">📌 置顶</span>
+                            )}
+                            {diary.data.private && (
+                                <span class="shrink-0 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.68rem] font-bold
+                                             bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50">🔒 私密</span>
+                            )}
+                        </h3>
+
+                        <div class="flex items-center gap-1 text-[0.8rem] text-black/40 dark:text-white/40 transition mt-1.5">
+                            <Icon name="material-symbols:calendar-month-outline-rounded" class="text-[0.95rem]"></Icon>
+                            <span>{formatDiaryDate(diary.data.published)}</span>
+                        </div>
+
+                        {diary.data.description && (
+                            <p class="text-black/55 dark:text-white/55 transition text-sm leading-relaxed line-clamp-1 mt-1.5">
+                                {diary.data.description}
+                            </p>
+                        )}
+
+                        {diary.data.tags && diary.data.tags.length > 0 && (
+                            <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                                {diary.data.tags.map(tag => (
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs border border-black/10 dark:border-white/15
+                                                 text-black/55 dark:text-white/55 transition group-hover:border-[var(--primary)]/40 group-hover:text-[var(--primary)]">
+                                        # {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <!-- 箭头 (hover 时滑入) -->
+                    <div class="shrink-0 self-center opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                        <Icon name="material-symbols:chevron-right-rounded" class="text-[1.5rem] text-[var(--primary)]"></Icon>
+                    </div>
+                </a>
+            ))}
+        </div>
+
+        {sortedDiaries.length === 0 && (
+            <div class="card-base text-center py-14 text-black/50 dark:text-white/50">
+                <div class="text-4xl mb-4">📝</div>
+                <p>还没有日记，快来写第一篇吧！</p>
+            </div>
+        )}
     </div>
 </MainGridLayout>
 
 <style>
-    /* 置顶日记的边框高亮 */
+    /* 置顶日记：主题色描边微光 */
     .diary-card[data-pinned="true"] {
-        border-color: rgb(var(--primary) / 0.3) !important;
+        box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--primary) 35%, transparent);
     }
 </style>
